@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Tracking Lapas Palopo</title>
+    <title>Sistem Tracking Lapas Palopo - Online</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -69,11 +69,6 @@
             transition: all 0.3s ease;
         }
 
-        .edit-mode-active {
-            border: 2px solid var(--warning);
-            background: #fffbeb;
-        }
-
         .hidden { display: none !important; }
 
         h2, h3 { margin-top: 0; color: #0f172a; text-align: center; }
@@ -108,27 +103,13 @@
             transition: transform 0.1s, opacity 0.2s;
         }
 
+        .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
         .btn:active { transform: scale(0.98); }
         .btn-primary { background: var(--primary); }
         .btn-accent { background: var(--accent); }
-        .btn-warning { background: var(--warning); }
         .btn-danger { background: var(--danger); }
         .btn-outline { background: white; color: #166534; border: 2px solid #166534; }
 
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 0.8rem;
-            width: auto;
-        }
-
-        .excel-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        /* Result Styles */
         .status-node {
             border-left: 3px solid var(--primary);
             padding: 0 0 20px 20px;
@@ -148,31 +129,16 @@
             border: 3px solid white;
         }
 
-        /* Container Tabel agar bisa Scroll jika data sangat banyak */
         .table-responsive {
-            max-height: 500px;
+            max-height: 400px;
             overflow-y: auto;
-            margin-top: 15px;
             border: 1px solid var(--border);
             border-radius: 10px;
         }
 
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border); }
-        th { 
-            background: #f8fafc; 
-            color: var(--secondary); 
-            position: sticky; 
-            top: 0; 
-            z-index: 1;
-        }
-
-        .footer-note {
-            font-size: 0.75rem;
-            color: var(--secondary);
-            margin-top: 15px;
-            text-align: center;
-        }
+        th { background: #f8fafc; color: var(--secondary); position: sticky; top: 0; }
     </style>
 </head>
 <body>
@@ -196,71 +162,95 @@
         <h2>🔐 Restricted Access</h2>
         <div class="form-group">
             <label>Password Admin</label>
-            <input type="password" id="admin-pass" placeholder="Password default: xxxx">
+            <input type="password" id="admin-pass" placeholder="Password: admin123">
         </div>
         <button class="btn btn-primary" onclick="doLogin()">Login</button>
     </div>
 
     <div id="view-admin" class="hidden">
-        <div class="card" id="admin-form-card">
+        <div class="card">
             <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 id="form-title" style="margin:0">🛠 Input Data</h3>
+                <h3 style="margin:0">🛠 Input Data Online</h3>
                 <button onclick="doLogout()" style="color:var(--danger); border:none; background:none; cursor:pointer; font-weight:bold;">Keluar</button>
             </div>
 
-            <div class="excel-grid">
-                <button class="btn btn-outline" onclick="getExcelTemplate()">📄 Template</button>
-                <button class="btn" style="background:#166534" onclick="document.getElementById('excel-file').click()">📗 Import Excel</button>
-            </div>
-            <p style="font-size: 0.7rem; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">*Limit import: 100 baris per file</p>
-            <input type="file" id="excel-file" accept=".xlsx, .xls" class="hidden" onchange="importFromExcel(event)">
-
             <form id="tracking-form">
-                <input type="hidden" id="edit-id-ref">
                 <div class="form-group">
                     <label>ID Barang / Resi</label>
-                    <input type="text" id="in-id" required>
+                    <input type="text" id="in-id" required placeholder="Contoh: LP-001">
                 </div>
                 <div class="form-group">
                     <label>Status & Lokasi</label>
                     <div style="display: flex; gap: 10px;">
-                        <input type="text" id="in-status" placeholder="Status" required>
-                        <input type="text" id="in-loc" placeholder="Lokasi" required>
+                        <input type="text" id="in-status" placeholder="Status (Diterima/Dicek)" required>
+                        <input type="text" id="in-loc" placeholder="Nama Warga Binaan" required>
                     </div>
                 </div>
                 <div class="form-group">
                     <label>Tanggal Update</label>
                     <input type="date" id="in-date" required>
                 </div>
-                <button type="submit" id="submit-btn" class="btn btn-accent">Simpan Data</button>
-                <button type="button" id="cancel-btn" class="btn hidden" style="background:var(--secondary); margin-top:10px;" onclick="resetAdminForm()">Batal Edit</button>
+                <button type="submit" id="submit-btn" class="btn btn-accent">Simpan ke Database Online</button>
             </form>
         </div>
 
         <div class="card">
-            <h3>📋 Database Log (Semua Data)</h3>
+            <h3>📋 Riwayat Database (Online)</h3>
             <div class="table-responsive">
-                <table id="log-table">
+                <table>
                     <thead>
-                        <tr><th>Resi</th><th>Status</th><th>Aksi</th></tr>
+                        <tr><th>Resi</th><th>Status</th><th>Tanggal</th></tr>
                     </thead>
-                    <tbody id="log-tbody"></tbody>
+                    <tbody id="log-tbody">
+                        <tr><td colspan="3" style="text-align:center;">Memuat data...</td></tr>
+                    </tbody>
                 </table>
-            </div>
-
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px dashed var(--border);">
-                <p class="footer-note">⚠️ Tombol di bawah akan menghapus SEMUA data di browser ini secara permanen.</p>
-                <button class="btn btn-danger" onclick="clearFullStorage()">🗑 BERSIHKAN SEMUA DATA (LOCAL STORAGE)</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    const IMPORT_LIMIT = 100; 
-    let db = JSON.parse(localStorage.getItem('tracking_db')) || [];
+    // === KONFIGURASI ===
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyVIpYNdeIwBUXNcdpRocRRkVWtUwUvTyPNLvdem3DczwrAB986G-X4vAQWYlxWVh3nlQ/exec"; 
+    let db = [];
     let authenticated = false;
 
+    // === LOGIKA DATABASE ONLINE ===
+    async function loadOnlineData() {
+        try {
+            const response = await fetch(SCRIPT_URL);
+            db = await response.json();
+            updateAdminTable();
+        } catch (e) {
+            console.error("Gagal memuat data:", e);
+            document.getElementById('log-tbody').innerHTML = '<tr><td colspan="3" style="text-align:center; color:red;">Gagal terhubung ke database</td></tr>';
+        }
+    }
+
+    async function saveToOnlineDB(entry) {
+        const btn = document.getElementById('submit-btn');
+        btn.disabled = true;
+        btn.innerText = "Mengirim...";
+
+        try {
+            await fetch(SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "add", ...entry })
+            });
+            await loadOnlineData();
+            alert("Data berhasil tersimpan di Google Sheets!");
+        } catch (e) {
+            alert("Gagal menyimpan data ke server.");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Simpan ke Database Online";
+        }
+    }
+
+    window.onload = loadOnlineData;
+
+    // === LOGIKA UI ===
     function switchTab(target) {
         document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
         document.getElementById('view-user').classList.add('hidden');
@@ -297,83 +287,26 @@
         switchTab('user');
     }
 
-    document.getElementById('tracking-form').addEventListener('submit', function(e) {
+    document.getElementById('tracking-form').addEventListener('submit', async function(e) {
         e.preventDefault();
-        const editUid = document.getElementById('edit-id-ref').value;
-        
         const newEntry = {
-            uid: editUid ? parseFloat(editUid) : Date.now(),
+            uid: Date.now(),
             id: document.getElementById('in-id').value.toUpperCase().trim(),
             status: document.getElementById('in-status').value,
             loc: document.getElementById('in-loc').value,
             date: document.getElementById('in-date').value
         };
 
-        if (editUid) {
-            const idx = db.findIndex(item => item.uid == editUid);
-            db[idx] = newEntry;
-        } else {
-            db.push(newEntry);
-        }
-
-        saveToStorage();
-        resetAdminForm();
-        updateAdminTable();
-        alert("Data berhasil disimpan!");
+        await saveToOnlineDB(newEntry);
+        this.reset();
     });
 
-    function editEntry(uid) {
-        const item = db.find(i => i.uid === uid);
-        if (item) {
-            document.getElementById('edit-id-ref').value = item.uid;
-            document.getElementById('in-id').value = item.id;
-            document.getElementById('in-status').value = item.status;
-            document.getElementById('in-loc').value = item.loc;
-            document.getElementById('in-date').value = item.date;
-
-            document.getElementById('admin-form-card').classList.add('edit-mode-active');
-            document.getElementById('form-title').innerText = "✏️ Mode Edit Data";
-            document.getElementById('submit-btn').innerText = "Simpan Perubahan";
-            document.getElementById('submit-btn').className = "btn btn-warning";
-            document.getElementById('cancel-btn').classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    }
-
-    function resetAdminForm() {
-        document.getElementById('tracking-form').reset();
-        document.getElementById('edit-id-ref').value = "";
-        document.getElementById('admin-form-card').classList.remove('edit-mode-active');
-        document.getElementById('form-title').innerText = "🛠 Input Data";
-        document.getElementById('submit-btn').innerText = "Simpan Data";
-        document.getElementById('submit-btn').className = "btn btn-accent";
-        document.getElementById('cancel-btn').classList.add('hidden');
-    }
-
-    function clearFullStorage() {
-        if (confirm("Hapus seluruh data di Local Storage?")) {
-            if (confirm("Tindakan ini tidak bisa dibatalkan. Yakin?")) {
-                db = [];
-                localStorage.removeItem('tracking_db');
-                updateAdminTable();
-                resetAdminForm();
-                alert("Storage telah dibersihkan.");
-            }
-        }
-    }
-
-    function saveToStorage() {
-        localStorage.setItem('tracking_db', JSON.stringify(db));
-    }
-
-    // --- PERBAIKAN: MENAMPILKAN SEMUA DATA ---
     function updateAdminTable() {
         const tbody = document.getElementById('log-tbody');
-        // Urutkan berdasarkan tanggal terbaru tanpa memotong jumlahnya
-        const sorted = [...db].sort((a, b) => new Date(b.date) - new Date(a.date));
+        const sorted = [...db].reverse(); // Terbaru di atas
         
         if (sorted.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Tidak ada data</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Belum ada data di server</td></tr>';
             return;
         }
 
@@ -381,7 +314,7 @@
             <tr>
                 <td><strong>${item.id}</strong></td>
                 <td>${item.status}</td>
-                <td><button class="btn btn-warning btn-sm" onclick="editEntry(${item.uid})">Edit</button></td>
+                <td>${item.date}</td>
             </tr>
         `).join('');
     }
@@ -394,7 +327,7 @@
         const filtered = db.filter(i => i.id === q).sort((a,b) => new Date(b.date) - new Date(a.date));
 
         if (filtered.length > 0) {
-            resDiv.innerHTML = `<h4 style="margin-bottom:15px">Histori Pelacakan ${q}:</h4>` + 
+            resDiv.innerHTML = `<h4 style="margin-bottom:15px">Hasil Pelacakan ${q}:</h4>` + 
                 filtered.map(item => `
                     <div class="status-node">
                         <div style="font-weight:bold; color:var(--primary);">${item.status}</div>
@@ -403,53 +336,8 @@
                     </div>
                 `).join('');
         } else {
-            resDiv.innerHTML = `<p style="text-align:center; color:var(--danger); padding:20px;">ID / Resi tidak ditemukan.</p>`;
+            resDiv.innerHTML = `<p style="text-align:center; color:var(--danger); padding:20px;">Data tidak ditemukan di database online.</p>`;
         }
-    }
-
-    function getExcelTemplate() {
-        const data = [["id", "status", "location", "date"], ["LP-001", "Diterima", "Palopo", "2025-12-22"]];
-        const ws = XLSX.utils.aoa_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-        XLSX.writeFile(wb, "Template_Tracking.xlsx");
-    }
-
-    function importFromExcel(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-            const data = new Uint8Array(evt.target.result);
-            const wb = XLSX.read(data, { type: 'array' });
-            const sheetName = wb.SheetNames[0];
-            const sheet = XLSX.utils.sheet_to_json(wb.Sheets[sheetName]);
-            
-            if (sheet.length > IMPORT_LIMIT) {
-                alert("Gagal Impor! Maksimal " + IMPORT_LIMIT + " baris.");
-                e.target.value = "";
-                return;
-            }
-
-            sheet.forEach(row => {
-                if (row.id) {
-                    db.push({
-                        uid: Date.now() + Math.random(),
-                        id: String(row.id).toUpperCase().trim(),
-                        status: row.status || "Update",
-                        loc: row.location || "-",
-                        date: row.date || new Date().toISOString().split('T')[0]
-                    });
-                }
-            });
-
-            saveToStorage();
-            updateAdminTable();
-            alert("Impor berhasil!");
-            e.target.value = "";
-        };
-        reader.readAsArrayBuffer(file);
     }
 </script>
 </body>
