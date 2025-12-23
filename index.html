@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Tracking Lapas Palopo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --accent: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: #1e293b;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 650px;
+            padding: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #e2e8f0;
+            padding: 5px;
+            border-radius: 14px;
+            margin-bottom: 25px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background: transparent;
+            font-weight: 600;
+            color: var(--secondary);
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: var(--card);
+            color: var(--primary);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .card {
+            background: var(--card);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .edit-mode-active {
+            border: 2px solid var(--warning);
+            background: #fffbeb;
+        }
+
+        .hidden { display: none !important; }
+
+        h2, h3 { margin-top: 0; color: #0f172a; text-align: center; }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; color: #475569; }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); }
+        .btn-accent { background: var(--accent); }
+        .btn-warning { background: var(--warning); }
+        .btn-danger { background: var(--danger); }
+        .btn-outline { background: white; color: #166534; border: 2px solid #166534; }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            width: auto;
+        }
+
+        .excel-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        /* Result Styles */
+        .status-node {
+            border-left: 3px solid var(--primary);
+            padding: 0 0 20px 20px;
+            position: relative;
+            margin-left: 10px;
+        }
+
+        .status-node::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 0;
+            width: 12px;
+            height: 12px;
+            background: var(--primary);
+            border-radius: 50%;
+            border: 3px solid white;
+        }
+
+        /* Container Tabel agar bisa Scroll jika data sangat banyak */
+        .table-responsive {
+            max-height: 500px;
+            overflow-y: auto;
+            margin-top: 15px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border); }
+        th { 
+            background: #f8fafc; 
+            color: var(--secondary); 
+            position: sticky; 
+            top: 0; 
+            z-index: 1;
+        }
+
+        .footer-note {
+            font-size: 0.75rem;
+            color: var(--secondary);
+            margin-top: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="tabs">
+        <button class="tab-btn active" id="tab-user" onclick="switchTab('user')">Lacak Barang</button>
+        <button class="tab-btn" id="tab-admin" onclick="switchTab('admin')">Admin Panel</button>
+    </div>
+
+    <div id="view-user" class="card">
+        <h2>📦 Tracking Titipan Lapas</h2>
+        <div class="form-group">
+            <input type="text" id="search-input" placeholder="Masukkan Nomor Resi / ID...">
+        </div>
+        <button class="btn btn-primary" onclick="searchPackage()">Cari Sekarang</button>
+        <div id="search-result" style="margin-top: 20px;"></div>
+    </div>
+
+    <div id="view-login" class="card hidden">
+        <h2>🔐 Restricted Access</h2>
+        <div class="form-group">
+            <label>Password Admin</label>
+            <input type="password" id="admin-pass" placeholder="Password default: xxxx">
+        </div>
+        <button class="btn btn-primary" onclick="doLogin()">Login</button>
+    </div>
+
+    <div id="view-admin" class="hidden">
+        <div class="card" id="admin-form-card">
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 id="form-title" style="margin:0">🛠 Input Data</h3>
+                <button onclick="doLogout()" style="color:var(--danger); border:none; background:none; cursor:pointer; font-weight:bold;">Keluar</button>
+            </div>
+
+            <div class="excel-grid">
+                <button class="btn btn-outline" onclick="getExcelTemplate()">📄 Template</button>
+                <button class="btn" style="background:#166534" onclick="document.getElementById('excel-file').click()">📗 Import Excel</button>
+            </div>
+            <p style="font-size: 0.7rem; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">*Limit import: 100 baris per file</p>
+            <input type="file" id="excel-file" accept=".xlsx, .xls" class="hidden" onchange="importFromExcel(event)">
+
+            <form id="tracking-form">
+                <input type="hidden" id="edit-id-ref">
+                <div class="form-group">
+                    <label>ID Barang / Resi</label>
+                    <input type="text" id="in-id" required>
+                </div>
+                <div class="form-group">
+                    <label>Status & Lokasi</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="in-status" placeholder="Status" required>
+                        <input type="text" id="in-loc" placeholder="Lokasi" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Tanggal Update</label>
+                    <input type="date" id="in-date" required>
+                </div>
+                <button type="submit" id="submit-btn" class="btn btn-accent">Simpan Data</button>
+                <button type="button" id="cancel-btn" class="btn hidden" style="background:var(--secondary); margin-top:10px;" onclick="resetAdminForm()">Batal Edit</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>📋 Database Log (Semua Data)</h3>
+            <div class="table-responsive">
+                <table id="log-table">
+                    <thead>
+                        <tr><th>Resi</th><th>Status</th><th>Aksi</th></tr>
+                    </thead>
+                    <tbody id="log-tbody"></tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px dashed var(--border);">
+                <p class="footer-note">⚠️ Tombol di bawah akan menghapus SEMUA data di browser ini secara permanen.</p>
+                <button class="btn btn-danger" onclick="clearFullStorage()">🗑 BERSIHKAN SEMUA DATA (LOCAL STORAGE)</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const IMPORT_LIMIT = 100; 
+    let db = JSON.parse(localStorage.getItem('tracking_db')) || [];
+    let authenticated = false;
+
+    function switchTab(target) {
+        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+        document.getElementById('view-user').classList.add('hidden');
+        document.getElementById('view-login').classList.add('hidden');
+        document.getElementById('view-admin').classList.add('hidden');
+
+        if (target === 'user') {
+            document.getElementById('tab-user').classList.add('active');
+            document.getElementById('view-user').classList.remove('hidden');
+        } else {
+            document.getElementById('tab-admin').classList.add('active');
+            if (authenticated) {
+                document.getElementById('view-admin').classList.remove('hidden');
+                updateAdminTable();
+            } else {
+                document.getElementById('view-login').classList.remove('hidden');
+            }
+        }
+    }
+
+    function doLogin() {
+        const pass = document.getElementById('admin-pass').value;
+        if (pass === "admin123") {
+            authenticated = true;
+            switchTab('admin');
+        } else {
+            alert("Password salah!");
+        }
+    }
+
+    function doLogout() {
+        authenticated = false;
+        document.getElementById('admin-pass').value = "";
+        switchTab('user');
+    }
+
+    document.getElementById('tracking-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const editUid = document.getElementById('edit-id-ref').value;
+        
+        const newEntry = {
+            uid: editUid ? parseFloat(editUid) : Date.now(),
+            id: document.getElementById('in-id').value.toUpperCase().trim(),
+            status: document.getElementById('in-status').value,
+            loc: document.getElementById('in-loc').value,
+            date: document.getElementById('in-date').value
+        };
+
+        if (editUid) {
+            const idx = db.findIndex(item => item.uid == editUid);
+            db[idx] = newEntry;
+        } else {
+            db.push(newEntry);
+        }
+
+        saveToStorage();
+        resetAdminForm();
+        updateAdminTable();
+        alert("Data berhasil disimpan!");
+    });
+
+    function editEntry(uid) {
+        const item = db.find(i => i.uid === uid);
+        if (item) {
+            document.getElementById('edit-id-ref').value = item.uid;
+            document.getElementById('in-id').value = item.id;
+            document.getElementById('in-status').value = item.status;
+            document.getElementById('in-loc').value = item.loc;
+            document.getElementById('in-date').value = item.date;
+
+            document.getElementById('admin-form-card').classList.add('edit-mode-active');
+            document.getElementById('form-title').innerText = "✏️ Mode Edit Data";
+            document.getElementById('submit-btn').innerText = "Simpan Perubahan";
+            document.getElementById('submit-btn').className = "btn btn-warning";
+            document.getElementById('cancel-btn').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+
+    function resetAdminForm() {
+        document.getElementById('tracking-form').reset();
+        document.getElementById('edit-id-ref').value = "";
+        document.getElementById('admin-form-card').classList.remove('edit-mode-active');
+        document.getElementById('form-title').innerText = "🛠 Input Data";
+        document.getElementById('submit-btn').innerText = "Simpan Data";
+        document.getElementById('submit-btn').className = "btn btn-accent";
+        document.getElementById('cancel-btn').classList.add('hidden');
+    }
+
+    function clearFullStorage() {
+        if (confirm("Hapus seluruh data di Local Storage?")) {
+            if (confirm("Tindakan ini tidak bisa dibatalkan. Yakin?")) {
+                db = [];
+                localStorage.removeItem('tracking_db');
+                updateAdminTable();
+                resetAdminForm();
+                alert("Storage telah dibersihkan.");
+            }
+        }
+    }
+
+    function saveToStorage() {
+        localStorage.setItem('tracking_db', JSON.stringify(db));
+    }
+
+    // --- PERBAIKAN: MENAMPILKAN SEMUA DATA ---
+    function updateAdminTable() {
+        const tbody = document.getElementById('log-tbody');
+        // Urutkan berdasarkan tanggal terbaru tanpa memotong jumlahnya
+        const sorted = [...db].sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        if (sorted.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Tidak ada data</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = sorted.map(item => `
+            <tr>
+                <td><strong>${item.id}</strong></td>
+                <td>${item.status}</td>
+                <td><button class="btn btn-warning btn-sm" onclick="editEntry(${item.uid})">Edit</button></td>
+            </tr>
+        `).join('');
+    }
+
+    function searchPackage() {
+        const q = document.getElementById('search-input').value.toUpperCase().trim();
+        const resDiv = document.getElementById('search-result');
+        if(!q) return;
+
+        const filtered = db.filter(i => i.id === q).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+        if (filtered.length > 0) {
+            resDiv.innerHTML = `<h4 style="margin-bottom:15px">Histori Pelacakan ${q}:</h4>` + 
+                filtered.map(item => `
+                    <div class="status-node">
+                        <div style="font-weight:bold; color:var(--primary);">${item.status}</div>
+                        <div style="font-size:0.85rem; margin:4px 0;">📍 ${item.loc}</div>
+                        <div style="font-size:0.75rem; color:var(--secondary);">${item.date}</div>
+                    </div>
+                `).join('');
+        } else {
+            resDiv.innerHTML = `<p style="text-align:center; color:var(--danger); padding:20px;">ID / Resi tidak ditemukan.</p>`;
+        }
+    }
+
+    function getExcelTemplate() {
+        const data = [["id", "status", "location", "date"], ["LP-001", "Diterima", "Palopo", "2025-12-22"]];
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+        XLSX.writeFile(wb, "Template_Tracking.xlsx");
+    }
+
+    function importFromExcel(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const data = new Uint8Array(evt.target.result);
+            const wb = XLSX.read(data, { type: 'array' });
+            const sheetName = wb.SheetNames[0];
+            const sheet = XLSX.utils.sheet_to_json(wb.Sheets[sheetName]);
+            
+            if (sheet.length > IMPORT_LIMIT) {
+                alert("Gagal Impor! Maksimal " + IMPORT_LIMIT + " baris.");
+                e.target.value = "";
+                return;
+            }
+
+            sheet.forEach(row => {
+                if (row.id) {
+                    db.push({
+                        uid: Date.now() + Math.random(),
+                        id: String(row.id).toUpperCase().trim(),
+                        status: row.status || "Update",
+                        loc: row.location || "-",
+                        date: row.date || new Date().toISOString().split('T')[0]
+                    });
+                }
+            });
+
+            saveToStorage();
+            updateAdminTable();
+            alert("Impor berhasil!");
+            e.target.value = "";
+        };
+        reader.readAsArrayBuffer(file);
+    }
+</script>
+</body>
+</html>
